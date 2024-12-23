@@ -1,0 +1,29 @@
+name: VPC and Subnet Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Choose the environment (prod, dev, qa, uat)'
+        required: true
+        default: 'prod'
+
+jobs:
+  create-vpc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Apply VPC Terraform Configurations
+        run: terraform apply -auto-approve -var="env=${{ github.event.inputs.env }}" -var-file=terraform.tfvars
