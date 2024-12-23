@@ -1,0 +1,36 @@
+name: Load Balancer Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose action (create or remove)'
+        required: true
+        default: 'create'
+      env:
+        description: 'Choose the environment (prod, dev, qa, uat)'
+        required: true
+        default: 'prod'
+
+jobs:
+  manage-lb:
+    runs-on: ubuntu-latest
+    needs: ec2-deploy  # Ensure EC2 is deployed before creating LB
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create or Remove Load Balancer
+        run: |
+          if [ "${{ github.event.inputs.action }}" == "create" ]; then
+            aws elbv2 create-load-balancer --name ${{ github.event.inputs.lb_name }} --subnets ${{ secrets.SUBNETS }} --security-groups ${{ secrets.SECURITY_GROUPS }}
+          elif [ "${{ github.event.inputs.action }}" == "remove" ]; then
+            aws elbv2 delete-load-balancer --load-balancer-arn ${{ github.event.inputs.lb_arn }}
+          fi
