@@ -1,0 +1,28 @@
+name: EC2 Instance Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Choose the environment (prod, dev, qa, uat)'
+        required: true
+        default: 'prod'
+
+jobs:
+  deploy-ec2:
+    runs-on: ubuntu-latest
+    needs: vpc-setup  # Make sure VPC is created before deploying EC2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Launch EC2 Instances for High Availability
+        run: |
+          aws ec2 run-instances --image-id ${{ secrets.AMI_ID }} --instance-type t2.micro --count 2 --subnet-id ${{ secrets.SUBNETS }} --security-group-ids ${{ secrets.SECURITY_GROUPS }} --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=web-instance}]'
