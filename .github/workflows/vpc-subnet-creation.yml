@@ -26,10 +26,11 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: '1.10.2'  # Specify the version of Terraform you want to use
+          terraform_version: '1.10.2'
 
       - name: Initialize Terraform
         run: terraform init
 
-      - name: Apply VPC Terraform Configurations
-        run: terraform apply -auto-approve -var="env=${{ github.event.inputs.env }}" -var-file=terraform.tfvars
+      # Use inline variables if terraform.tfvars is missing
+      - name: Apply Terraform Configuration
+        run: terraform apply -auto-approve -var="env=${{ github.event.inputs.env }}" -var="aws_region=${{ secrets.AWS_REGION }}" -var="subnet_id=${{ secrets.SUBNET_ID }}" -var="vpc_id=${{ secrets.VPC_ID }}"
